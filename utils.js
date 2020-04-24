@@ -3,6 +3,7 @@ const path = require("path");
 
 exports.walkDir = walkDir;
 exports.humanSize = humanSize;
+exports.humanDuration = humanDuration;
 
 function* walkDir(directory, options) {
     for (let file of fs.readdirSync(directory, { withFileTypes: true })) {
@@ -34,4 +35,24 @@ function humanSize(bytes) {
     }
 
     return unit == null ? `${size} byte(s)` : `${size.toFixed(2)} ${unit}`;
+}
+
+function humanDuration(nanoseconds) {
+    let smallDuration = 0n;
+    let smallUnit = "ms";
+    let bigDuration = nanoseconds / 1_000_000n;
+    let bigUnit = "ms";
+
+    for (let [u, factor] of [["s", 1000n], ["m", 60n], ["h", 60n]]) {
+        if (bigDuration < factor) {
+            break;
+        }
+
+        smallDuration = bigDuration % factor;
+        smallUnit = bigUnit;
+        bigDuration = bigDuration / factor;
+        bigUnit = u;
+    }
+
+    return `${bigDuration}${bigUnit}` + (smallUnit == "ms" ? "" : `${smallDuration}${smallUnit}`);
 }

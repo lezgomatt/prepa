@@ -13,6 +13,8 @@ exports.run = async function(directory) {
         br: { count: 0, size: 0 },
     };
     
+    let startTime = process.hrtime.bigint();
+
     for (let path of utils.walkDir(directory, { ext: TextExtensions })) {
         let size = fs.statSync(path).size;
         stats.og.count += 1;
@@ -31,6 +33,10 @@ exports.run = async function(directory) {
         }
     }
 
+    let endTime = process.hrtime.bigint();
+    let hDuration = utils.humanDuration(endTime - startTime);
+    console.log(`zip: Took ${hDuration} to complete`);
+
     let ogHSize = utils.humanSize(stats.og.size);
     let gzHSize = utils.humanSize(stats.gz.size);
     let gzRatio = (stats.gz.size/stats.og.size * 100).toFixed(2);
@@ -39,9 +45,9 @@ exports.run = async function(directory) {
     let brRatio = (stats.br.size/stats.og.size * 100).toFixed(2);
     let brSkip = stats.og.count - stats.br.count;
 
-    console.log(`Compressed ${stats.og.count} text file(s) with a total size of ${ogHSize}.`);
-    console.log(`gzip: ${gzHSize} (${gzRatio}% of original), skipped ${gzSkip} file(s)`);
-    console.log(`brotli: ${brHSize} (${brRatio}% of original), skipped ${brSkip} file(s)`);
+    console.log(`  original: ${ogHSize}, ${stats.og.count} text file(s)`);
+    console.log(`  gzip: ${gzHSize} (${gzRatio}% of original), skipped ${gzSkip} file(s)`);
+    console.log(`  brotli: ${brHSize} (${brRatio}% of original), skipped ${brSkip} file(s)`);
 }
 
 function makeGzip(ogPath, ogSize) {
