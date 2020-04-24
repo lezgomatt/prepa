@@ -7,10 +7,41 @@ const utils = require("./utils");
 const TextExtensions = [".css", ".htm", ".html", ".js", ".json", ".mjs", ".txt", ".xml"];
 
 exports.run = async function(directory) {
+    let stats = {
+        og: { count: 0, size: 0 },
+        gz: { count: 0, size: 0 },
+        br: { count: 0, size: 0 },
+    };
+    
     for (let path of utils.walkDir(directory, { ext: TextExtensions })) {
         let size = fs.statSync(path).size;
-        await Promise.all([makeGzip(path, size), makeBrotli(path, size)]);
+        stats.og.count += 1;
+        stats.og.size += size;
+
+        let [gzSize, brSize] = await Promise.all([makeGzip(path, size), makeBrotli(path, size)]);
+
+        if (gzSize != null) {
+            stats.gz.count += 1;
+            stats.gz.size += gzSize;
+        }
+        
+        if (brSize != null) {
+            stats.br.count += 1;
+            stats.br.size += brSize;
+        }
     }
+
+    let ogHSize = utils.humanSize(stats.og.size);
+    let gzHSize = utils.humanSize(stats.gz.size);
+    let gzRatio = (stats.gz.size/stats.og.size * 100).toFixed(2);
+    let gzSkip = stats.og.count - stats.gz.count;
+    let brHSize = utils.humanSize(stats.br.size);
+    let brRatio = (stats.br.size/stats.og.size * 100).toFixed(2);
+    let brSkip = stats.og.count - stats.br.count;
+
+    console.log(`Compressed ${stats.og.count} text file(s) with a total size of ${ogHSize}.`);
+    console.log(`gzip: ${gzHSize} (${gzRatio}% of original), skipped ${gzSkip} file(s)`);
+    console.log(`brotli: ${brHSize} (${brRatio}% of original), skipped ${brSkip} file(s)`);
 }
 
 function makeGzip(ogPath, ogSize) {
@@ -28,9 +59,10 @@ function makeGzip(ogPath, ogSize) {
         
             if (gzSize > ogSize) {
                 fs.unlinkSync(gzPath);
+                resolve(null);
             }
             
-            resolve();
+            resolve(gzSize);
         });
     });
 }
@@ -54,9 +86,10 @@ function makeBrotli(ogPath, ogSize) {
         
             if (brSize > ogSize) {
                 fs.unlinkSync(brPath);
+                resolve(null);
             }
             
-            resolve();
+            resolve(brSize);
         });
     });
 }
