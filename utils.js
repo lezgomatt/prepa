@@ -10,7 +10,7 @@ function* walkDir(directory, options) {
         let filePath = path.join(directory, file.name);
 
         if (file.isFile()) {
-            if (options.ext == null || options.ext.includes(path.extname(filePath))) {
+            if (options.ext == null || options.ext.includes(path.extname(file.name))) {
                 yield filePath;
             }
         } else if (file.isDirectory()) {

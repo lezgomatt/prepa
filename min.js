@@ -23,52 +23,38 @@ exports.run = async function(directory) {
         let og = fs.readFileSync(p, "utf8");
         let ogSize = fs.statSync(p).size;
 
-        let min;
+        let type, min;
         switch (ext) {
         case ".css":
+            type = "css";
             min = csso.minify(og).css;
-            fs.writeFileSync(p, min);
-
-            stats.css.count += 1;
-            stats.css.ogSize += ogSize;
-            stats.css.minSize += fs.statSync(p).size;
             break;
         case ".js":
         case ".mjs":
+            type = "js";
             min = terser.minify(og).code;
-            fs.writeFileSync(p, min);
-
-            stats.js.count += 1;
-            stats.js.ogSize += ogSize;
-            stats.js.minSize += fs.statSync(p).size;
             break;
         case ".svg":
+            type = "svg";
             min = (await svgo.optimize(og)).data;
-            fs.writeFileSync(p, min);
-
-            stats.svg.count += 1;
-            stats.svg.ogSize += ogSize;
-            stats.svg.minSize += fs.statSync(p).size;
             break;
         }
+
+        fs.writeFileSync(p, min);
+
+        stats[type].count += 1;
+        stats[type].ogSize += ogSize;
+        stats[type].minSize += fs.statSync(p).size;
     }
 
     let endTime = process.hrtime.bigint();
     let hDuration = utils.humanDuration(endTime - startTime);
     console.log(`min: Took ${hDuration} to complete`);
 
-    let cssOgHSize = utils.humanSize(stats.css.ogSize);
-    let cssMinHSize = utils.humanSize(stats.css.minSize);
-    let cssSavings = 100 - (stats.css.ogSize === 0 ? 100 : stats.css.minSize/stats.css.ogSize * 100);
-    console.log(`  css: ${cssOgHSize} => ${cssMinHSize} (saved ${cssSavings.toFixed(2)}%) -- ${stats.css.count} file(s)`);
-
-    let jsOgHSize = utils.humanSize(stats.js.ogSize);
-    let jsMinHSize = utils.humanSize(stats.js.minSize);
-    let jsSavings = 100 - (stats.js.ogSize === 0 ? 100 : stats.js.minSize/stats.js.ogSize * 100);
-    console.log(`  js: ${jsOgHSize} => ${jsMinHSize} (saved ${jsSavings.toFixed(2)}%) -- ${stats.js.count} file(s)`);
-
-    let svgOgHSize = utils.humanSize(stats.svg.ogSize);
-    let svgMinHSize = utils.humanSize(stats.svg.minSize);
-    let svgSavings = 100 - (stats.svg.ogSize === 0 ? 100 : stats.svg.minSize/stats.svg.ogSize * 100);
-    console.log(`  svg: ${svgOgHSize} => ${svgMinHSize} (saved ${svgSavings.toFixed(2)}%) -- ${stats.svg.count} file(s)`);
+    for (let type of ["css", "js", "svg"]) {
+        let ogSize = utils.humanSize(stats[type].ogSize);
+        let minSize = utils.humanSize(stats[type].minSize);
+        let savings = 100 - (stats[type].ogSize === 0 ? 100 : stats[type].minSize/stats[type].ogSize * 100);
+        console.log(`  ${type}: ${ogSize} => ${minSize} (saved ${savings.toFixed(2)}%) -- ${stats[type].count} file(s)`);
+    }
 }
