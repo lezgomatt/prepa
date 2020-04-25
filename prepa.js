@@ -2,6 +2,7 @@
 
 "use strict";
 
+const min = require("./min");
 const zip = require("./zip");
 
 process.title = "prepa";
@@ -72,7 +73,7 @@ case "go":
     console.error("Command not yet implemented.");
     break;
 case "min":
-    console.error("Command not yet implemented.");
+    min.run(dir);
     break;
 case "hash":
     console.error("Command not yet implemented.");
