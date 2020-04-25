@@ -1,5 +1,6 @@
 "use strict";
 
+const Buffer = require("buffer").Buffer;
 const fs = require("fs");
 const path = require("path");
 const csso = require("csso");
@@ -9,9 +10,9 @@ const utils = require("./utils");
 
 exports.run = async function(directory) {
     let stats = {
-        css: { count: 0, ogSize: 0, minSize: 0 },
-        js: { count: 0, ogSize: 0, minSize: 0 },
-        svg: { count: 0, ogSize: 0, minSize: 0 },
+        css: { count: 0, ogSize: 0, minSize: 0, skip: 0 },
+        js: { count: 0, ogSize: 0, minSize: 0, skip: 0 },
+        svg: { count: 0, ogSize: 0, minSize: 0, skip: 0 },
     };
 
     let svgo = new SVGO.default();
@@ -40,7 +41,12 @@ exports.run = async function(directory) {
             break;
         }
 
-        fs.writeFileSync(p, min);
+        if (Buffer.byteLength(min, "utf8") < Buffer.byteLength(og, "utf8")) {
+            fs.writeFileSync(p, min);
+        } else {
+            min = og;
+            stats[type].skip += 1;
+        }
 
         stats[type].count += 1;
         stats[type].ogSize += ogSize;
@@ -55,6 +61,6 @@ exports.run = async function(directory) {
         let ogSize = utils.humanSize(stats[type].ogSize);
         let minSize = utils.humanSize(stats[type].minSize);
         let savings = 100 - (stats[type].ogSize === 0 ? 100 : stats[type].minSize/stats[type].ogSize * 100);
-        console.log(`  ${type}: ${ogSize} => ${minSize} (saved ${savings.toFixed(2)}%) -- ${stats[type].count} file(s)`);
+        console.log(`  ${type}: ${ogSize} => ${minSize} (saved ${savings.toFixed(2)}%) -- ${stats[type].count} file(s), skipped ${stats[type].skip} file(s)`);
     }
 }
