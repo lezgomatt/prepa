@@ -25,11 +25,15 @@ exports.run = async function(directory) {
         if (gzSize != null) {
             stats.gz.count += 1;
             stats.gz.size += gzSize;
+        } else {
+            stats.gz.size += size;
         }
         
         if (brSize != null) {
             stats.br.count += 1;
             stats.br.size += brSize;
+        } else {
+            stats.br.size += size;
         }
     }
 
@@ -38,16 +42,17 @@ exports.run = async function(directory) {
     console.log(`zip: Took ${hDuration} to complete`);
 
     let ogHSize = utils.humanSize(stats.og.size);
-    let gzHSize = utils.humanSize(stats.gz.size);
-    let gzRatio = (stats.gz.size/stats.og.size * 100).toFixed(2);
-    let gzSkip = stats.og.count - stats.gz.count;
-    let brHSize = utils.humanSize(stats.br.size);
-    let brRatio = (stats.br.size/stats.og.size * 100).toFixed(2);
-    let brSkip = stats.og.count - stats.br.count;
-
     console.log(`  original: ${ogHSize}, ${stats.og.count} text file(s)`);
-    console.log(`  gzip: ${gzHSize} (${gzRatio}% of original), skipped ${gzSkip} file(s)`);
-    console.log(`  brotli: ${brHSize} (${brRatio}% of original), skipped ${brSkip} file(s)`);
+
+    let gzHSize = utils.humanSize(stats.gz.size);
+    let gzSavings = 100 - (stats.og.size === 0 ? 100 : stats.gz.size/stats.og.size * 100);
+    let gzSkip = stats.og.count - stats.gz.count;
+    console.log(`  gzip: ${gzHSize} (saved ${gzSavings.toFixed(2)}%), skipped ${gzSkip} file(s)`);
+
+    let brHSize = utils.humanSize(stats.br.size);
+    let brSavings = 100 - (stats.og.size === 0 ? 100 : stats.br.size/stats.og.size * 100);
+    let brSkip = stats.og.count - stats.br.count;
+    console.log(`  brotli: ${brHSize} (saved ${brSavings.toFixed(2)}%), skipped ${brSkip} file(s)`);
 }
 
 function makeGzip(ogPath, ogSize) {

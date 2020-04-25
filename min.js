@@ -59,16 +59,16 @@ exports.run = async function(directory) {
 
     let cssOgHSize = utils.humanSize(stats.css.ogSize);
     let cssMinHSize = utils.humanSize(stats.css.minSize);
-    let cssMinRatio = (stats.css.minSize/stats.css.ogSize * 100).toFixed(2);
-    console.log(`  css: ${cssOgHSize} => ${cssMinHSize} (${cssMinRatio}% of original) -- ${stats.css.count} file(s)`);
+    let cssSavings = 100 - (stats.css.ogSize === 0 ? 100 : stats.css.minSize/stats.css.ogSize * 100);
+    console.log(`  css: ${cssOgHSize} => ${cssMinHSize} (saved ${cssSavings.toFixed(2)}%) -- ${stats.css.count} file(s)`);
 
     let jsOgHSize = utils.humanSize(stats.js.ogSize);
     let jsMinHSize = utils.humanSize(stats.js.minSize);
-    let jsMinRatio = (stats.js.minSize/stats.js.ogSize * 100).toFixed(2);
-    console.log(`  js: ${jsOgHSize} => ${jsMinHSize} (${jsMinRatio}% of original) -- ${stats.js.count} file(s)`);
+    let jsSavings = 100 - (stats.js.ogSize === 0 ? 100 : stats.js.minSize/stats.js.ogSize * 100);
+    console.log(`  js: ${jsOgHSize} => ${jsMinHSize} (saved ${jsSavings.toFixed(2)}%) -- ${stats.js.count} file(s)`);
 
     let svgOgHSize = utils.humanSize(stats.svg.ogSize);
     let svgMinHSize = utils.humanSize(stats.svg.minSize);
-    let svgMinRatio = (stats.svg.minSize/stats.svg.ogSize * 100).toFixed(2);
-    console.log(`  svg: ${svgOgHSize} => ${svgMinHSize} (${svgMinRatio}% of original) -- ${stats.svg.count} file(s)`);
+    let svgSavings = 100 - (stats.svg.ogSize === 0 ? 100 : stats.svg.minSize/stats.svg.ogSize * 100);
+    console.log(`  svg: ${svgOgHSize} => ${svgMinHSize} (saved ${svgSavings.toFixed(2)}%) -- ${stats.svg.count} file(s)`);
 }
