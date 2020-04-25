@@ -76,7 +76,8 @@ if (args.length > 3) {
 
 switch (cmd) {
 case "go":
-    console.error("Command not yet implemented.");
+    min.run(dir);
+    zip.run(dir);
     break;
 case "min":
     min.run(dir);
