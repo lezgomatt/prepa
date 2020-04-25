@@ -4,6 +4,7 @@
 
 const fs = require("fs");
 const min = require("./min");
+const hash = require("./hash");
 const zip = require("./zip");
 
 process.title = "prepa";
@@ -77,13 +78,14 @@ if (args.length > 3) {
 switch (cmd) {
 case "go":
     min.run(dir);
+    hash.run(dir);
     zip.run(dir);
     break;
 case "min":
     min.run(dir);
     break;
 case "hash":
-    console.error("Command not yet implemented.");
+    hash.run(dir);
     break;
 case "zip":
     zip.run(dir);

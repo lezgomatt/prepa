@@ -1,10 +1,9 @@
 "use strict";
 
+const path = require("path");
 const fs = require("fs");
 const zlib = require("zlib");
 const utils = require("./utils");
-
-const TextExtensions = [".css", ".htm", ".html", ".js", ".json", ".mjs", ".txt", ".xml"];
 
 exports.run = async function(directory) {
     let stats = {
@@ -15,12 +14,17 @@ exports.run = async function(directory) {
     
     let startTime = process.hrtime.bigint();
 
-    for (let path of utils.walkDir(directory, { ext: TextExtensions })) {
-        let size = fs.statSync(path).size;
+    for (let p of utils.walkDir(directory)) {
+        let ext = path.extname(p);
+        if (![".css", ".htm", ".html", ".js", ".json", ".mjs", ".svg", ".txt", ".xml"].includes(ext)) {
+            continue;
+        }
+
+        let size = fs.statSync(p).size;
         stats.og.count += 1;
         stats.og.size += size;
 
-        let [gzSize, brSize] = await Promise.all([makeGzip(path, size), makeBrotli(path, size)]);
+        let [gzSize, brSize] = await Promise.all([makeGzip(p, size), makeBrotli(p, size)]);
 
         if (gzSize != null) {
             stats.gz.count += 1;

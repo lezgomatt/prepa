@@ -19,8 +19,12 @@ exports.run = async function(directory) {
 
     let startTime = process.hrtime.bigint();
 
-    for (let p of utils.walkDir(directory, { ext: [".css", ".js", ".mjs", ".svg"] })) {
+    for (let p of utils.walkDir(directory)) {
         let ext = path.extname(p);
+        if (![".css", ".js", ".mjs", ".svg"].includes(ext)) {
+            continue;
+        }
+
         let og = fs.readFileSync(p, "utf8");
         let ogSize = fs.statSync(p).size;
 

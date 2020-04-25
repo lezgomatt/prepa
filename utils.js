@@ -5,16 +5,14 @@ exports.walkDir = walkDir;
 exports.humanSize = humanSize;
 exports.humanDuration = humanDuration;
 
-function* walkDir(directory, options) {
+function* walkDir(directory) {
     for (let file of fs.readdirSync(directory, { withFileTypes: true })) {
         let filePath = path.join(directory, file.name);
 
         if (file.isFile()) {
-            if (options.ext == null || options.ext.includes(path.extname(file.name))) {
-                yield filePath;
-            }
+            yield filePath;
         } else if (file.isDirectory()) {
-            yield* walkDir(filePath, options);
+            yield* walkDir(filePath);
         } else {
             throw new Error(`unexpected file "${filePath}"`);
         }
