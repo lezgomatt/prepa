@@ -2,6 +2,7 @@
 
 "use strict";
 
+const fs = require("fs");
 const min = require("./min");
 const zip = require("./zip");
 
@@ -57,10 +58,15 @@ if (flag !== "--replace") {
 }
 
 if (args.length <= 2) {
-    console.error(`Missing directory`);
+    console.error("Missing directory");
     process.exit(1);
 } else {
     dir = args[2];
+}
+
+if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) {
+    console.error(`Invalid directory: ${dir}`);
+    process.exit(1);
 }
 
 if (args.length > 3) {
