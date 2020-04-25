@@ -25,20 +25,29 @@ exports.run = async function(directory) {
         let ogSize = fs.statSync(p).size;
 
         let type, min;
-        switch (ext) {
-        case ".css":
-            type = "css";
-            min = csso.minify(og).css;
-            break;
-        case ".js":
-        case ".mjs":
-            type = "js";
-            min = terser.minify(og).code;
-            break;
-        case ".svg":
-            type = "svg";
-            min = (await svgo.optimize(og)).data;
-            break;
+
+        try {
+            switch (ext) {
+            case ".css":
+                type = "css";
+                min = csso.minify(og).css;
+                break;
+            case ".js":
+            case ".mjs":
+                type = "js";
+                min = terser.minify(og).code;
+                break;
+            case ".svg":
+                type = "svg";
+                min = (await svgo.optimize(og)).data;
+                break;
+            }
+        } catch (e) {
+            console.error(`min: Error minifying "${p}"`);
+        }
+
+        if (min == null) {
+            min = og;
         }
 
         if (Buffer.byteLength(min, "utf8") < Buffer.byteLength(og, "utf8")) {
