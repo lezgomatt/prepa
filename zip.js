@@ -42,8 +42,8 @@ exports.run = async function(directory) {
     }
 
     let endTime = process.hrtime.bigint();
-    let hDuration = utils.humanDuration(endTime - startTime);
-    console.log(`zip: Took ${hDuration} to complete`);
+    let duration = utils.humanDuration(endTime - startTime);
+    console.log(`zip: Took ${duration} to complete`);
 
     let ogSize = utils.humanSize(stats.og.size);
     console.log(`  original: ${ogSize}, ${stats.og.count} text file(s)`);

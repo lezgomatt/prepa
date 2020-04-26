@@ -42,18 +42,30 @@ function humanDuration(nanoseconds) {
     let bigDuration = nanoseconds / 1_000_000n;
     let bigUnit = "ms";
 
-    for (let [u, factor] of [["s", 1000n], ["m", 60n], ["h", 60n]]) {
-        if (bigDuration < factor) {
+    let seconds = bigDuration / 1_000n;
+    if (seconds < 60n) {
+        let justSeconds = Number(bigDuration) / 1000;
+
+        return `${justSeconds.toFixed(3)}s`
+    }
+
+    smallDuration = bigDuration % 1_000n;
+    smallUnit = bigUnit;
+    bigDuration = seconds;
+    bigUnit = "s";
+
+    for (let unit of ["m", "h"]) {
+        if (bigDuration < 60n) {
             break;
         }
 
-        smallDuration = bigDuration % factor;
+        smallDuration = bigDuration % 60n;
         smallUnit = bigUnit;
-        bigDuration = bigDuration / factor;
-        bigUnit = u;
+        bigDuration = bigDuration / 60n;
+        bigUnit = unit;
     }
 
-    return `${bigDuration}${bigUnit}` + (smallUnit == "ms" ? "" : `${smallDuration}${smallUnit}`);
+    return `${bigDuration}${bigUnit} ${smallDuration}${smallUnit}`;
 }
 
 function urlPath(baseDir, p) {

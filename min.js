@@ -67,8 +67,8 @@ exports.run = async function(directory) {
     }
 
     let endTime = process.hrtime.bigint();
-    let hDuration = utils.humanDuration(endTime - startTime);
-    console.log(`min: Took ${hDuration} to complete`);
+    let duration = utils.humanDuration(endTime - startTime);
+    console.log(`min: Took ${duration} to complete`);
 
     for (let type of ["css", "js", "svg"]) {
         let ogSize = utils.humanSize(stats[type].ogSize);

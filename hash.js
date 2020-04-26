@@ -58,8 +58,8 @@ exports.run = async function(directory) {
     }
 
     let endTime = process.hrtime.bigint();
-    let hDuration = utils.humanDuration(endTime - startTime);
-    console.log(`hash: Took ${hDuration} to complete`);
+    let duration = utils.humanDuration(endTime - startTime);
+    console.log(`hash: Took ${duration} to complete`);
 
     fs.writeFileSync(path.join(process.cwd(), "prepa-renames.json"), JSON.stringify(renames, null, 2));
 }
