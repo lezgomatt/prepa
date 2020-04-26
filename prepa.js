@@ -77,9 +77,7 @@ if (args.length > 3) {
 
 switch (cmd) {
 case "go":
-    min.run(dir);
-    hash.run(dir);
-    zip.run(dir);
+    go(dir);
     break;
 case "min":
     min.run(dir);
@@ -90,4 +88,10 @@ case "hash":
 case "zip":
     zip.run(dir);
     break;
+}
+
+async function go(dir) {
+    await min.run(dir);
+    await hash.run(dir);
+    await zip.run(dir);
 }
