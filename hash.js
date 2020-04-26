@@ -65,13 +65,28 @@ exports.run = async function(directory) {
 }
 
 const HtmlRefPatt = /(<[^/][^>]*\s(href|src)\s*=\s*)(("[^"]*")|('[^']*'))/mg;
+const SrcsetPatt = /(<[^/][^>]*\s(srcset)\s*=\s*)(("[^"]*")|('[^']*'))/mg;
 
 function updateHtmlRefs(html, htmlDir, renames) {
-    return html.replace(HtmlRefPatt, (match, prefix, attr, quotedVal, dQuote, sQuote) => {
+    html = html.replace(HtmlRefPatt, (match, prefix, attr, quotedVal, dQuote, sQuote) => {
         let val = quotedVal.slice(1, quotedVal.length - 1).trim();
 
         return `${prefix}"${updateUrl(val, htmlDir, renames)}"`;
     });
+
+    html = html.replace(SrcsetPatt, (match, prefix, attr, quotedVal, dQuote, sQuote) => {
+        let val = quotedVal.slice(1, quotedVal.length - 1).trim();
+
+        let newSrcset = val
+            .split(/\s*,\s*/)
+            .map(src => src.replace(/^\S+/, (url) => updateUrl(url, htmlDir, renames)))
+            .join(", ")
+        ;
+
+        return `${prefix}"${newSrcset}"`;
+    });
+
+    return html;
 }
 
 const CssRefPatt = /url\(\s*(("[^"]+")|('[^']+')|([^\)]+))\s*\)/g;
