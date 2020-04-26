@@ -12,20 +12,32 @@ exports.run = async function(directory) {
 
     for (let ogPath of utils.walkDir(directory)) {
         let ext = path.extname(ogPath);
-        if (["", ".htm", ".html", ".json", ".txt", ".xml"].includes(ext)) {
+        if (["", ".css", ".htm", ".html", ".json", ".txt", ".xml"].includes(ext)) {
             continue;
         }
 
-        let hash = await computeHash(fs.createReadStream(ogPath));
-
-        let p = path.parse(ogPath);
-        let nameParts = p.base.split(".");
-        let fullExtension = nameParts.slice(1).join(".");
-        let newName = `${nameParts[0]}-${hash}.${fullExtension}`;
-        let newPath = path.join(p.dir, newName);
-
+        let newPath = await computeHash(ogPath);
         fs.renameSync(ogPath, newPath);
+        renames[utils.urlPath(directory, ogPath)] = utils.urlPath(directory, newPath);
+    }
 
+    for (let ogPath of utils.walkDir(directory)) {
+        let ext = path.extname(ogPath);
+        if (ext !== ".css") {
+            continue;
+        }
+
+        let css = fs.readFileSync(ogPath, "utf8");
+        let cssDir = path.posix.dirname(utils.urlPath(directory, ogPath));
+
+        try {
+            fs.writeFileSync(ogPath, updateCssRefs(css, cssDir, renames));
+        } catch (e) {
+            console.error(`hash: Error replacing refs for "${utils.urlPath(directory, ogPath)}"`);
+        }
+
+        let newPath = await computeHash(ogPath);
+        fs.renameSync(ogPath, newPath);
         renames[utils.urlPath(directory, ogPath)] = utils.urlPath(directory, newPath);
     }
 
@@ -62,6 +74,16 @@ function updateHtmlRefs(html, htmlDir, renames) {
     });
 }
 
+const CssRefPatt = /url\(\s*(("[^"]+")|('[^']+')|([^\)]+))\s*\)/g;
+
+function updateCssRefs(css, cssDir, renames) {
+    return css.replace(CssRefPatt, (match, quotedVal, dQuote, sQuote, quoteless) => {
+        let val = quoteless != null ? quoteless.trim() : quotedVal.slice(1, quotedVal.length - 1);
+
+        return `url("${updateUrl(val, cssDir, renames)}")`;
+    });
+}
+
 const UrlPatt = /^(.+:)?([^?#]*)((\?[^#]*)?(#.*)?)$/;
 
 function updateUrl(url, dir, renames) {
@@ -86,7 +108,9 @@ function updateUrl(url, dir, renames) {
 
 const HashLength = 16;
 
-async function computeHash(inputStream) {
+async function computeHash(filePath) {
+    let inputStream =fs.createReadStream(filePath);
+
     let hash = await new Promise((resolve, reject) => {
         let result = crypto.createHash("BLAKE2b512");
         inputStream.on("error", (err) => { reject(err); });
@@ -94,7 +118,15 @@ async function computeHash(inputStream) {
         inputStream.on("end", () => { resolve(result.digest("base64")); });
     });
 
-    return base64Url(hash.slice(0, HashLength));
+    hash = base64Url(hash.slice(0, HashLength));
+
+    let p = path.parse(filePath);
+    let nameParts = p.base.split(".");
+    let fullExtension = nameParts.slice(1).join(".");
+    let newName = `${nameParts[0]}-${hash}.${fullExtension}`;
+    let newPath = path.join(p.dir, newName);
+
+    return newPath;
 }
 
 const UrlFriendly = { "+": "-", "/": "_", "=": "" };
