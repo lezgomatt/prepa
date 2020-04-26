@@ -5,10 +5,8 @@ const fs = require("fs");
 const path = require("path");
 const utils = require("./utils");
 
-const HashLength = 16;
-
 exports.run = async function(directory) {
-    let renames = [];
+    let renames = Object.create(null);
 
     let startTime = process.hrtime.bigint();
 
@@ -28,7 +26,23 @@ exports.run = async function(directory) {
 
         fs.renameSync(ogPath, newPath);
 
-        renames.push({ og: ogPath, new: newPath });
+        renames[utils.urlPath(directory, ogPath)] = utils.urlPath(directory, newPath);
+    }
+
+    for (let p of utils.walkDir(directory)) {
+        let ext = path.extname(p);
+        if (![".htm", ".html"].includes(ext)) {
+            continue;
+        }
+
+        let html = fs.readFileSync(p, "utf8");
+        let htmlDir = path.posix.dirname(utils.urlPath(directory, p));
+
+        try {
+            fs.writeFileSync(p, updateHtmlRefs(html, htmlDir, renames));
+        } catch (e) {
+            console.error(`hash: Error replacing refs for "${utils.urlPath(directory, p)}"`);
+        }
     }
 
     let endTime = process.hrtime.bigint();
@@ -37,6 +51,40 @@ exports.run = async function(directory) {
 
     fs.writeFileSync(path.join(directory, "prepa-renames.json"), JSON.stringify(renames, null, 2));
 }
+
+const HtmlRefPatt = /(<[^/][^>]*\s(href|src)\s*=\s*)(("[^"]*")|('[^']*'))/mg;
+
+function updateHtmlRefs(html, htmlDir, renames) {
+    return html.replace(HtmlRefPatt, (match, prefix, attr, quotedVal, dQuote, sQuote) => {
+        let val = quotedVal.slice(1, quotedVal.length - 1).trim();
+
+        return `${prefix}"${updateUrl(val, htmlDir, renames)}"`;
+    });
+}
+
+const UrlPatt = /^(.+:)?([^?#]*)((\?[^#]*)?(#.*)?)$/;
+
+function updateUrl(url, dir, renames) {
+    let [match, scheme, refPath, suffix, query, fragment] = url.match(UrlPatt);
+
+    if (scheme != null) {
+        return url;
+    }
+
+    let decPath = refPath.split("/").map(c => decodeURIComponent(c)).join("/")
+    let ogPath = path.posix.resolve(dir, decPath);
+
+    if (!(ogPath in renames)) {
+        return url;
+    }
+
+    let newPath = (refPath[0] === "/") ? renames[ogPath] : path.posix.relative(dir, renames[ogPath]);
+    let encPath = newPath.split("/").map(c => encodeURIComponent(c)).join("/");
+
+    return encPath + suffix;
+}
+
+const HashLength = 16;
 
 async function computeHash(inputStream) {
     let hash = await new Promise((resolve, reject) => {

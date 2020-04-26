@@ -4,6 +4,7 @@ const path = require("path");
 exports.walkDir = walkDir;
 exports.humanSize = humanSize;
 exports.humanDuration = humanDuration;
+exports.urlPath = urlPath;
 
 function* walkDir(directory) {
     for (let file of fs.readdirSync(directory, { withFileTypes: true })) {
@@ -53,4 +54,13 @@ function humanDuration(nanoseconds) {
     }
 
     return `${bigDuration}${bigUnit}` + (smallUnit == "ms" ? "" : `${smallDuration}${smallUnit}`);
+}
+
+function urlPath(baseDir, p) {
+    let result = path.relative(baseDir, p);
+    if (process.platform === "win32") {
+        result = result.replace(/\\/g, "/");
+    }
+
+    return path.posix.resolve("/", result);
 }

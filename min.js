@@ -47,7 +47,7 @@ exports.run = async function(directory) {
                 break;
             }
         } catch (e) {
-            console.error(`min: Error minifying "${p}"`);
+            console.error(`min: Error minifying "${utils.urlPath(directory, p)}"`);
         }
 
         if (min == null) {
