@@ -61,7 +61,7 @@ exports.run = async function(directory) {
     let hDuration = utils.humanDuration(endTime - startTime);
     console.log(`hash: Took ${hDuration} to complete`);
 
-    fs.writeFileSync(path.join(directory, "prepa-renames.json"), JSON.stringify(renames, null, 2));
+    fs.writeFileSync(path.join(process.cwd(), "prepa-renames.json"), JSON.stringify(renames, null, 2));
 }
 
 const HtmlRefPatt = /(<[^/][^>]*\s(href|src)\s*=\s*)(("[^"]*")|('[^']*'))/mg;
