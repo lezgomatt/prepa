@@ -26,6 +26,7 @@ function help() {
         "  go         Run min, hash, and zip in one go",
         "  min        Minify assets",
         "  hash       Fingerprint assets",
+        "  rename     Like `hash` but without fixing references",
         "  zip        Precompress assets",
     ];
 
@@ -41,7 +42,7 @@ if (args.length <= 0) {
     cmd = args[0];
 }
 
-if (!["go", "min", "hash", "zip"].includes(cmd)) {
+if (!["go", "min", "hash", "rename", "zip"].includes(cmd)) {
     console.error(`Unrecognized command: ${cmd}`);
     process.exit(1);
 }
@@ -83,7 +84,10 @@ case "min":
     min.run(dir);
     break;
 case "hash":
-    hash.run(dir);
+    hash.run(dir, true);
+    break;
+case "rename":
+    hash.run(dir, false);
     break;
 case "zip":
     zip.run(dir);

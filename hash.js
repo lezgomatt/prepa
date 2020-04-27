@@ -5,7 +5,7 @@ const fs = require("fs");
 const path = require("path");
 const utils = require("./utils");
 
-exports.run = async function(directory) {
+exports.run = async function(directory, fixRefs) {
     let renames = Object.create(null);
 
     let startTime = process.hrtime.bigint();
@@ -27,13 +27,15 @@ exports.run = async function(directory) {
             continue;
         }
 
-        let css = fs.readFileSync(ogPath, "utf8");
-        let cssDir = path.posix.dirname(utils.urlPath(directory, ogPath));
-
-        try {
-            fs.writeFileSync(ogPath, updateCssRefs(css, cssDir, renames));
-        } catch (e) {
-            console.error(`hash: Error replacing refs for "${utils.urlPath(directory, ogPath)}"`);
+        if (fixRefs) {
+            let css = fs.readFileSync(ogPath, "utf8");
+            let cssDir = path.posix.dirname(utils.urlPath(directory, ogPath));
+    
+            try {
+                fs.writeFileSync(ogPath, fixCssRefs(css, cssDir, renames));
+            } catch (e) {
+                console.error(`hash: Error replacing refs for "${utils.urlPath(directory, ogPath)}"`);
+            }
         }
 
         let newPath = await computeHash(ogPath);
@@ -41,19 +43,21 @@ exports.run = async function(directory) {
         renames[utils.urlPath(directory, ogPath)] = utils.urlPath(directory, newPath);
     }
 
-    for (let p of utils.walkDir(directory)) {
-        let ext = path.extname(p);
-        if (![".htm", ".html"].includes(ext)) {
-            continue;
-        }
+    if (fixRefs) {
+        for (let p of utils.walkDir(directory)) {
+            let ext = path.extname(p);
+            if (![".htm", ".html"].includes(ext)) {
+                continue;
+            }
 
-        let html = fs.readFileSync(p, "utf8");
-        let htmlDir = path.posix.dirname(utils.urlPath(directory, p));
+            let html = fs.readFileSync(p, "utf8");
+            let htmlDir = path.posix.dirname(utils.urlPath(directory, p));
 
-        try {
-            fs.writeFileSync(p, updateHtmlRefs(html, htmlDir, renames));
-        } catch (e) {
-            console.error(`hash: Error replacing refs for "${utils.urlPath(directory, p)}"`);
+            try {
+                fs.writeFileSync(p, fixHtmlRefs(html, htmlDir, renames));
+            } catch (e) {
+                console.error(`hash: Error replacing refs for "${utils.urlPath(directory, p)}"`);
+            }
         }
     }
 
@@ -61,17 +65,19 @@ exports.run = async function(directory) {
     let duration = utils.humanDuration(endTime - startTime);
     console.log(`hash: Took ${duration} to complete`);
 
-    fs.writeFileSync(path.join(process.cwd(), "prepa-renames.json"), JSON.stringify(renames, null, 2));
+    if (!fixRefs) {
+        fs.writeFileSync(path.join(process.cwd(), "prepa-renames.json"), JSON.stringify(renames, null, 2));
+    }
 }
 
 const HtmlRefPatt = /(<[^/][^>]*\s(href|src)\s*=\s*)(("[^"]*")|('[^']*'))/mg;
 const SrcsetPatt = /(<[^/][^>]*\s(srcset)\s*=\s*)(("[^"]*")|('[^']*'))/mg;
 
-function updateHtmlRefs(html, htmlDir, renames) {
+function fixHtmlRefs(html, htmlDir, renames) {
     html = html.replace(HtmlRefPatt, (match, prefix, attr, quotedVal, dQuote, sQuote) => {
         let val = quotedVal.slice(1, quotedVal.length - 1).trim();
 
-        return `${prefix}"${updateUrl(val, htmlDir, renames)}"`;
+        return `${prefix}"${fixUrl(val, htmlDir, renames)}"`;
     });
 
     html = html.replace(SrcsetPatt, (match, prefix, attr, quotedVal, dQuote, sQuote) => {
@@ -79,7 +85,7 @@ function updateHtmlRefs(html, htmlDir, renames) {
 
         let newSrcset = val
             .split(/\s*,\s*/)
-            .map(src => src.replace(/^\S+/, (url) => updateUrl(url, htmlDir, renames)))
+            .map(src => src.replace(/^\S+/, (url) => fixUrl(url, htmlDir, renames)))
             .join(", ")
         ;
 
@@ -91,17 +97,17 @@ function updateHtmlRefs(html, htmlDir, renames) {
 
 const CssRefPatt = /url\(\s*(("[^"]+")|('[^']+')|([^\)]+))\s*\)/g;
 
-function updateCssRefs(css, cssDir, renames) {
+function fixCssRefs(css, cssDir, renames) {
     return css.replace(CssRefPatt, (match, quotedVal, dQuote, sQuote, quoteless) => {
         let val = quoteless != null ? quoteless.trim() : quotedVal.slice(1, quotedVal.length - 1);
 
-        return `url("${updateUrl(val, cssDir, renames)}")`;
+        return `url("${fixUrl(val, cssDir, renames)}")`;
     });
 }
 
 const UrlPatt = /^(.+:)?([^?#]*)((\?[^#]*)?(#.*)?)$/;
 
-function updateUrl(url, dir, renames) {
+function fixUrl(url, dir, renames) {
     let [match, scheme, refPath, suffix, query, fragment] = url.match(UrlPatt);
 
     if (scheme != null) {
