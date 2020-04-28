@@ -96,6 +96,6 @@ case "zip":
 
 async function go(dir) {
     await min.run(dir);
-    await hash.run(dir);
+    await hash.run(dir, true);
     await zip.run(dir);
 }
