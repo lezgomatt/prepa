@@ -1,10 +1,10 @@
 {
   "name": "prepa",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A utility for preparing static assets",
-  "author": "undecidabot",
+  "author": "lezgomatt",
   "license": "Zlib",
-  "repository": "github:undecidabot/prepa",
+  "repository": "github:lezgomatt/prepa",
   "bin": {
     "prepa": "./prepa.js"
   },
