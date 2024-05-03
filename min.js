@@ -5,7 +5,7 @@ const fs = require("fs");
 const path = require("path");
 const csso = require("csso");
 const terser = require("terser");
-const SVGO = require("svgo");
+const svgo = require("svgo");
 const utils = require("./utils");
 
 exports.run = async function(directory) {
@@ -14,8 +14,6 @@ exports.run = async function(directory) {
         js: { count: 0, ogSize: 0, minSize: 0, skip: 0 },
         svg: { count: 0, ogSize: 0, minSize: 0, skip: 0 },
     };
-
-    let svgo = new SVGO.default();
 
     let startTime = process.hrtime.bigint();
 
@@ -39,11 +37,11 @@ exports.run = async function(directory) {
             case ".js":
             case ".mjs":
                 type = "js";
-                min = terser.minify(og).code;
+                min = terser.minify_sync(og).code;
                 break;
             case ".svg":
                 type = "svg";
-                min = (await svgo.optimize(og)).data;
+                min = svgo.optimize(og).data;
                 break;
             }
         } catch (e) {
